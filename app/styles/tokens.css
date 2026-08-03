@@ -1,0 +1,117 @@
+/* ==========================================================================
+   SMP Design Tokens — single source of truth for color, type, space, motion
+   ========================================================================== */
+
+:root {
+  /* Brand */
+  --smp-ink: #23212c;
+  --smp-accent: #f1fec8;
+
+  /* Surfaces — light theme */
+  --smp-bg: #f7f7f4;
+  --smp-surface: #ffffff;
+  --smp-surface-raised: #ffffff;
+  --smp-surface-sunken: #f0f0ec;
+
+  /* Ink scales */
+  --smp-ink-primary: var(--smp-ink);
+  --smp-ink-secondary: color-mix(in srgb, var(--smp-ink) 62%, transparent);
+  --smp-ink-tertiary: color-mix(in srgb, var(--smp-ink) 38%, transparent);
+  --smp-ink-quaternary: color-mix(in srgb, var(--smp-ink) 18%, transparent);
+  --smp-ink-inverse: #ffffff;
+
+  /* Borders & focus */
+  --smp-border: color-mix(in srgb, var(--smp-ink) 9%, transparent);
+  --smp-border-strong: color-mix(in srgb, var(--smp-ink) 16%, transparent);
+  --smp-focus-ring: color-mix(in srgb, var(--smp-ink) 28%, transparent);
+
+  /* Interactive — premium hover language (color only, no layout shift) */
+  --smp-hover: color-mix(in srgb, var(--smp-ink) 5%, transparent);
+  --smp-hover-strong: color-mix(in srgb, var(--smp-ink) 8%, transparent);
+  --smp-hover-soft: color-mix(in srgb, var(--smp-ink) 3.5%, transparent);
+  /* On whitish glass: ink wash (white-on-white is invisible) */
+  --smp-hover-on-glass: color-mix(in srgb, var(--smp-ink) 6%, transparent);
+  --smp-hover-on-glass-strong: color-mix(in srgb, var(--smp-ink) 10%, transparent);
+  --smp-active: color-mix(in srgb, var(--smp-ink) 9%, transparent);
+  --smp-accent-muted: color-mix(in srgb, var(--smp-accent) 55%, var(--smp-surface));
+  --smp-accent-strong: color-mix(in srgb, var(--smp-accent) 82%, #d8e89a);
+  --smp-accent-press: color-mix(in srgb, var(--smp-accent) 70%, #c5d68a);
+
+  /* Layout geometry */
+  --smp-navbar-height: 64px;
+  --smp-sidebar-width: 264px;
+  /* Icon rail: 40px hit target centered in 72px — (72 − 40) / 2 = 16 */
+  --smp-sidebar-width-collapsed: 72px;
+  --smp-content-max: 1200px;
+  --smp-radius-sm: 8px;
+  --smp-radius-md: 12px;
+  --smp-radius-lg: 16px;
+  --smp-radius-pill: 999px;
+
+  /* Spacing scale (4px base) */
+  --smp-space-1: 4px;
+  --smp-space-2: 8px;
+  --smp-space-3: 12px;
+  --smp-space-4: 16px;
+  --smp-space-5: 20px;
+  --smp-space-6: 24px;
+  --smp-space-7: 32px;
+  --smp-space-8: 40px;
+  --smp-space-9: 48px;
+  --smp-space-10: 64px;
+
+  /* Typography */
+  --smp-font-sans: var(--font-instrument), "Helvetica Neue", Helvetica, Arial,
+    sans-serif;
+  --smp-font-display: var(--font-instrument), "Helvetica Neue", Helvetica, Arial,
+    sans-serif;
+
+  --smp-text-xs: 0.75rem;
+  --smp-text-sm: 0.8125rem;
+  --smp-text-md: 0.9375rem;
+  --smp-text-lg: 1.0625rem;
+  --smp-text-xl: 1.25rem;
+  --smp-text-2xl: 1.5rem;
+  --smp-text-3xl: 1.875rem;
+
+  --smp-leading-tight: 1.2;
+  --smp-leading-snug: 1.35;
+  --smp-leading-normal: 1.5;
+
+  --smp-tracking-tight: -0.02em;
+  --smp-tracking-normal: -0.01em;
+  --smp-tracking-wide: 0.04em;
+
+  --smp-weight-regular: 400;
+  --smp-weight-medium: 500;
+  --smp-weight-semibold: 600;
+
+  /* Elevation — flat premium: hairline only, no soft glow stacks */
+  --smp-shadow-xs: 0 1px 0 color-mix(in srgb, var(--smp-ink) 5%, transparent);
+  --smp-shadow-sm: 0 1px 2px color-mix(in srgb, var(--smp-ink) 4%, transparent),
+    0 1px 0 color-mix(in srgb, var(--smp-ink) 3%, transparent);
+
+  /* Motion */
+  --smp-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --smp-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --smp-duration-fast: 140ms;
+  --smp-duration: 220ms;
+  --smp-duration-slow: 320ms;
+
+  /* Z-index */
+  --smp-z-sidebar: 40;
+  --smp-z-navbar: 50;
+  --smp-z-overlay: 60;
+  --smp-z-popover: 70;
+
+  /* Iconography */
+  --smp-icon-sm: 16px;
+  --smp-icon-md: 18px;
+  --smp-icon-lg: 20px;
+}
+
+@theme inline {
+  --color-background: var(--smp-bg);
+  --color-foreground: var(--smp-ink);
+  --font-sans: var(--smp-font-sans);
+}

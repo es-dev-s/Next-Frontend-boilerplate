@@ -1,0 +1,771 @@
+/* ==========================================================================
+   App shell — fixed sidebar + synced canvas inset
+   Pattern: Notion / Linear — one shared width token drives both sidebar
+   width and content inset on the same timing curve (no desync / jump).
+   Collapsed mode removes section labels from flow (display:none), not fade.
+   ========================================================================== */
+
+.smp-shell {
+  --smp-sidebar-current: var(--smp-sidebar-width);
+  position: relative;
+  min-height: 100dvh;
+  background: var(--smp-bg);
+  padding-left: var(--smp-sidebar-current);
+  transition: padding-left var(--smp-duration) var(--smp-ease-out);
+}
+
+.smp-shell[data-sidebar-collapsed="true"] {
+  --smp-sidebar-current: var(--smp-sidebar-width-collapsed);
+}
+
+/*
+  Pre-paint + SSR fallback (desktop only): cookie/bootstrap stamp
+  html[data-sidebar-collapsed] so labels never flash before React.
+*/
+@media (min-width: 961px) {
+  html[data-sidebar-collapsed="true"] .smp-shell {
+    --smp-sidebar-current: var(--smp-sidebar-width-collapsed);
+  }
+
+  html[data-sidebar-collapsed="true"] .smp-sidebar__brand-copy,
+  html[data-sidebar-collapsed="true"] .smp-sidebar__group-label,
+  html[data-sidebar-collapsed="true"] .smp-nav-item__label,
+  html[data-sidebar-collapsed="true"] .smp-nav-item__badge {
+    display: none;
+  }
+
+  html[data-sidebar-collapsed="true"] .smp-sidebar__group + .smp-sidebar__group {
+    margin-top: var(--smp-space-2);
+    padding-top: var(--smp-space-2);
+    border-top: 1px solid var(--smp-border);
+  }
+
+  html[data-sidebar-collapsed="true"] .smp-nav-item {
+    width: 40px;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  html[data-sidebar-collapsed="true"] .smp-nav-item__dot {
+    display: block;
+  }
+}
+
+/* No width tween until client mount — toggle animations only after ready */
+.smp-shell[data-ready="false"],
+.smp-shell[data-ready="false"] .smp-sidebar {
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .smp-shell,
+  .smp-sidebar,
+  .smp-overlay,
+  .smp-sidebar__brand-face,
+  .smp-nav-item {
+    transition: none !important;
+  }
+}
+
+.smp-shell__canvas {
+  display: grid;
+  grid-template-rows: var(--smp-navbar-height) minmax(0, 1fr);
+  min-height: 100dvh;
+  min-width: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Sidebar — fixed; width locked to the same token as canvas inset            */
+/* -------------------------------------------------------------------------- */
+
+.smp-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: var(--smp-z-sidebar);
+  display: flex;
+  flex-direction: column;
+  width: var(--smp-sidebar-current);
+  background: var(--smp-surface);
+  border-right: 1px solid var(--smp-border);
+  overflow: hidden;
+  transition: width var(--smp-duration) var(--smp-ease-out);
+}
+
+/* Brand row — fixed 40px control column (same x as nav icons; no horizontal shift) */
+.smp-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--smp-navbar-height);
+  padding: 0 16px;
+  border-bottom: 1px solid var(--smp-border);
+  flex-shrink: 0;
+}
+
+.smp-sidebar__brand-control {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--smp-accent);
+  color: var(--smp-ink);
+  transition: background-color var(--smp-duration-fast) var(--smp-ease-out);
+}
+
+.smp-sidebar__brand-control:hover {
+  background: var(--smp-accent-strong);
+}
+
+.smp-sidebar__brand-control:active {
+  background: var(--smp-accent-press);
+}
+
+.smp-sidebar__brand-control:focus-visible {
+  outline: 2px solid var(--smp-focus-ring);
+  outline-offset: 2px;
+}
+
+.smp-sidebar__brand-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transition: opacity var(--smp-duration-fast) var(--smp-ease-out);
+}
+
+.smp-sidebar__brand-face svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Default: platform mark visible; action icon hidden until hover/focus */
+.smp-sidebar__brand-face--mark {
+  opacity: 1;
+}
+
+.smp-sidebar__brand-face--action {
+  opacity: 0;
+}
+
+.smp-sidebar__brand-control:hover .smp-sidebar__brand-face--mark,
+.smp-sidebar__brand-control:focus-visible .smp-sidebar__brand-face--mark {
+  opacity: 0;
+}
+
+.smp-sidebar__brand-control:hover .smp-sidebar__brand-face--action,
+.smp-sidebar__brand-control:focus-visible .smp-sidebar__brand-face--action {
+  opacity: 1;
+}
+
+.smp-sidebar__brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.smp-sidebar__brand-name {
+  font-size: var(--smp-text-md);
+  font-weight: var(--smp-weight-semibold);
+  letter-spacing: var(--smp-tracking-tight);
+  line-height: var(--smp-leading-tight);
+  color: var(--smp-ink-primary);
+  white-space: nowrap;
+}
+
+.smp-sidebar__brand-meta {
+  font-size: 11px;
+  font-weight: var(--smp-weight-medium);
+  letter-spacing: var(--smp-tracking-wide);
+  text-transform: uppercase;
+  color: var(--smp-ink-tertiary);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Collapse: remove brand text from layout entirely (no reserved gap) */
+.smp-shell[data-sidebar-collapsed="true"] .smp-sidebar__brand-copy {
+  display: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Nav scroll                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.smp-sidebar__scroll {
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* 16px = (72 − 40) / 2 — keeps icon column locked while width changes */
+  padding: var(--smp-space-3) 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--smp-ink-quaternary) transparent;
+  contain: layout paint;
+}
+
+.smp-sidebar__group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Expanded: labeled sections with breathing room */
+.smp-sidebar__group + .smp-sidebar__group {
+  margin-top: var(--smp-space-5);
+}
+
+.smp-sidebar__group-label {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  margin-bottom: var(--smp-space-1);
+  font-size: 11px;
+  font-weight: var(--smp-weight-semibold);
+  letter-spacing: var(--smp-tracking-wide);
+  text-transform: uppercase;
+  color: var(--smp-ink-tertiary);
+  white-space: nowrap;
+}
+
+/*
+  Collapsed (icon rail) — professional pattern:
+  - Section labels are removed from flow (display: none), not faded
+  - Groups collapse into one continuous icon stack
+  - Tiny hairline dividers separate groups (no empty header gaps)
+*/
+.smp-shell[data-sidebar-collapsed="true"] .smp-sidebar__group-label {
+  display: none;
+}
+
+.smp-shell[data-sidebar-collapsed="true"] .smp-sidebar__group + .smp-sidebar__group {
+  margin-top: var(--smp-space-2);
+  padding-top: var(--smp-space-2);
+  border-top: 1px solid var(--smp-border);
+}
+
+.smp-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Nav items — 40×40 icon column stays fixed; labels clip away on collapse    */
+/* -------------------------------------------------------------------------- */
+
+.smp-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0;
+  border-radius: var(--smp-radius-sm);
+  color: var(--smp-ink-secondary);
+  font-size: var(--smp-text-sm);
+  font-weight: var(--smp-weight-medium);
+  letter-spacing: var(--smp-tracking-normal);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 40px;
+  transition:
+    background-color var(--smp-duration-fast) var(--smp-ease-out),
+    color var(--smp-duration-fast) var(--smp-ease-out);
+}
+
+.smp-nav-item__icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--smp-radius-sm);
+  color: currentColor;
+}
+
+.smp-nav-item__icon svg {
+  width: var(--smp-icon-md);
+  height: var(--smp-icon-md);
+}
+
+.smp-nav-item__label {
+  flex: 1;
+  min-width: 0;
+  padding-right: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.smp-nav-item__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--smp-radius-pill);
+  background: var(--smp-ink);
+  color: var(--smp-ink-inverse);
+  font-size: 10px;
+  font-weight: var(--smp-weight-semibold);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.smp-nav-item__dot {
+  display: none;
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--smp-ink);
+  box-shadow: 0 0 0 2px var(--smp-surface);
+}
+
+.smp-nav-item:hover {
+  background: var(--smp-hover);
+  color: var(--smp-ink-primary);
+}
+
+.smp-nav-item:active {
+  background: var(--smp-hover-strong);
+  color: var(--smp-ink-primary);
+}
+
+.smp-nav-item[data-active="true"] {
+  background: var(--smp-accent);
+  color: var(--smp-ink-primary);
+}
+
+.smp-nav-item[data-active="true"]:hover {
+  background: var(--smp-accent-strong);
+}
+
+.smp-nav-item[data-active="true"]:active {
+  background: var(--smp-accent-press);
+}
+
+.smp-nav-item[data-active="true"] .smp-nav-item__badge {
+  background: var(--smp-ink);
+}
+
+/* Collapsed: clip to icon column only — icons do not re-center or jump */
+.smp-shell[data-sidebar-collapsed="true"] .smp-nav-item {
+  width: 40px;
+  gap: 0;
+  overflow: hidden;
+}
+
+.smp-shell[data-sidebar-collapsed="true"] .smp-nav-item__label,
+.smp-shell[data-sidebar-collapsed="true"] .smp-nav-item__badge {
+  display: none;
+}
+
+.smp-shell[data-sidebar-collapsed="true"] .smp-nav-item__dot {
+  display: block;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Navbar                                                                     */
+/* -------------------------------------------------------------------------- */
+
+.smp-navbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--smp-z-navbar);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--smp-space-4);
+  height: var(--smp-navbar-height);
+  padding: 0 var(--smp-space-6);
+  background: var(--smp-bg);
+  border-bottom: 1px solid var(--smp-border);
+}
+
+.smp-navbar__left,
+.smp-navbar__right {
+  display: flex;
+  align-items: center;
+  gap: var(--smp-space-3);
+  min-width: 0;
+}
+
+.smp-navbar__left {
+  flex: 1;
+}
+
+.smp-navbar__mobile-toggle {
+  display: none;
+}
+
+.smp-navbar__title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.smp-navbar__eyebrow {
+  font-size: 11px;
+  font-weight: var(--smp-weight-medium);
+  letter-spacing: var(--smp-tracking-wide);
+  text-transform: uppercase;
+  color: var(--smp-ink-tertiary);
+  line-height: 1.2;
+}
+
+.smp-navbar__title {
+  margin: 0;
+  font-size: var(--smp-text-lg);
+  font-weight: var(--smp-weight-semibold);
+  letter-spacing: var(--smp-tracking-tight);
+  line-height: var(--smp-leading-tight);
+  color: var(--smp-ink-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.smp-navbar__divider {
+  width: 1px;
+  height: 22px;
+  background: var(--smp-border);
+  flex-shrink: 0;
+}
+
+.smp-navbar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--smp-space-3);
+  height: 40px;
+  padding: 0 var(--smp-space-2);
+  border-radius: var(--smp-radius-md);
+  transition:
+    background-color var(--smp-duration-fast) var(--smp-ease-out),
+    color var(--smp-duration-fast) var(--smp-ease-out);
+}
+
+.smp-navbar__user:hover {
+  background: var(--smp-hover);
+}
+
+.smp-navbar__user:hover .smp-navbar__user-chevron {
+  color: var(--smp-ink-secondary);
+}
+
+.smp-navbar__user:active {
+  background: var(--smp-hover-strong);
+}
+
+.smp-navbar__avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--smp-ink);
+  color: var(--smp-accent);
+  font-size: 11px;
+  font-weight: var(--smp-weight-semibold);
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.smp-navbar__user-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: left;
+  min-width: 0;
+}
+
+.smp-navbar__user-name {
+  font-size: var(--smp-text-sm);
+  font-weight: var(--smp-weight-semibold);
+  color: var(--smp-ink-primary);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.smp-navbar__user-role {
+  font-size: 11px;
+  color: var(--smp-ink-tertiary);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Main content                                                               */
+/* -------------------------------------------------------------------------- */
+
+.smp-main {
+  min-width: 0;
+  overflow: auto;
+  /* Isolate page paint from chrome — heavy page updates won't repaint shell */
+  contain: layout paint style;
+  content-visibility: auto;
+}
+
+.smp-main__inner {
+  width: min(100%, var(--smp-content-max));
+  margin: 0 auto;
+  padding: var(--smp-space-8) var(--smp-space-6) var(--smp-space-10);
+}
+
+.smp-page-fallback {
+  display: flex;
+  flex-direction: column;
+  gap: var(--smp-space-4);
+  max-width: 40rem;
+}
+
+.smp-page-fallback__block {
+  border-radius: var(--smp-radius-sm);
+  background: color-mix(in srgb, var(--smp-ink) 6%, transparent);
+  animation: smp-pulse 1.2s var(--smp-ease-in-out) infinite;
+}
+
+.smp-page-fallback__block--lg {
+  height: 28px;
+  width: 70%;
+}
+
+.smp-page-fallback__block--md {
+  height: 16px;
+  width: 48%;
+}
+
+.smp-page-fallback__panel {
+  height: 160px;
+  margin-top: var(--smp-space-4);
+  border-radius: var(--smp-radius-lg);
+  border: 1px solid var(--smp-border);
+  background: var(--smp-surface);
+  animation: smp-pulse 1.2s var(--smp-ease-in-out) infinite;
+}
+
+@keyframes smp-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.smp-page-hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--smp-space-3);
+  max-width: 40rem;
+  padding-bottom: var(--smp-space-8);
+  border-bottom: 1px solid var(--smp-border);
+  margin-bottom: var(--smp-space-8);
+}
+
+.smp-page-hero__eyebrow {
+  font-size: 11px;
+  font-weight: var(--smp-weight-semibold);
+  letter-spacing: var(--smp-tracking-wide);
+  text-transform: uppercase;
+  color: var(--smp-ink-tertiary);
+}
+
+.smp-page-hero__title {
+  margin: 0;
+  font-size: var(--smp-text-3xl);
+  font-weight: var(--smp-weight-semibold);
+  letter-spacing: var(--smp-tracking-tight);
+  line-height: var(--smp-leading-tight);
+  color: var(--smp-ink-primary);
+}
+
+.smp-page-hero__lede {
+  margin: 0;
+  font-size: var(--smp-text-lg);
+  line-height: var(--smp-leading-snug);
+  color: var(--smp-ink-secondary);
+  max-width: 34rem;
+}
+
+.smp-page-panel {
+  display: grid;
+  gap: var(--smp-space-4);
+  padding: var(--smp-space-7);
+  background: var(--smp-surface);
+  border: 1px solid var(--smp-border);
+  border-radius: var(--smp-radius-lg);
+  box-shadow: var(--smp-shadow-xs);
+}
+
+.smp-page-panel__title {
+  margin: 0;
+  font-size: var(--smp-text-xl);
+  font-weight: var(--smp-weight-semibold);
+  letter-spacing: var(--smp-tracking-tight);
+  color: var(--smp-ink-primary);
+}
+
+.smp-page-panel__body {
+  margin: 0;
+  color: var(--smp-ink-secondary);
+  max-width: 36rem;
+}
+
+.smp-page-panel__accent {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--smp-space-2);
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: var(--smp-radius-pill);
+  background: var(--smp-accent);
+  color: var(--smp-ink);
+  font-size: var(--smp-text-xs);
+  font-weight: var(--smp-weight-semibold);
+  letter-spacing: 0.02em;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Mobile                                                                     */
+/* -------------------------------------------------------------------------- */
+
+.smp-overlay {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .smp-shell,
+  .smp-shell[data-sidebar-collapsed="true"] {
+    --smp-sidebar-current: var(--smp-sidebar-width);
+    padding-left: 0;
+    transition: none;
+  }
+
+  .smp-sidebar {
+    width: var(--smp-sidebar-width);
+    transform: translateX(-104%);
+    transition: transform var(--smp-duration) var(--smp-ease-out);
+  }
+
+  .smp-shell[data-mobile-nav="true"] .smp-sidebar {
+    transform: translateX(0);
+  }
+
+  /* Mobile drawer always shows the full labeled sidebar */
+  .smp-shell[data-sidebar-collapsed="true"] .smp-sidebar__brand-copy {
+    display: flex;
+  }
+
+  .smp-shell[data-sidebar-collapsed="true"] .smp-sidebar__group-label {
+    display: flex;
+  }
+
+  .smp-shell[data-sidebar-collapsed="true"] .smp-sidebar__group + .smp-sidebar__group {
+    margin-top: var(--smp-space-5);
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item {
+    width: auto;
+    gap: 10px;
+    overflow: visible;
+  }
+
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item__label {
+    display: block;
+    flex: 1;
+  }
+
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item__badge {
+    display: inline-flex;
+  }
+
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item__dot {
+    display: none;
+  }
+
+  /* On mobile, brand control keeps the platform mark (no collapse swap) */
+  .smp-sidebar__brand-face--mark {
+    opacity: 1;
+  }
+
+  .smp-sidebar__brand-face--action {
+    opacity: 0;
+  }
+
+  .smp-sidebar__brand-control:hover .smp-sidebar__brand-face--mark,
+  .smp-sidebar__brand-control:focus-visible .smp-sidebar__brand-face--mark {
+    opacity: 1;
+  }
+
+  .smp-sidebar__brand-control:hover .smp-sidebar__brand-face--action,
+  .smp-sidebar__brand-control:focus-visible .smp-sidebar__brand-face--action {
+    opacity: 0;
+  }
+
+  .smp-navbar {
+    padding-inline: var(--smp-space-4);
+  }
+
+  .smp-navbar__mobile-toggle {
+    display: inline-flex;
+  }
+
+  .smp-search {
+    display: none;
+  }
+
+  .smp-navbar__user-copy {
+    display: none;
+  }
+
+  .smp-popover--notifications,
+  .smp-popover--profile {
+    width: min(320px, calc(100vw - 24px));
+    max-width: min(320px, calc(100vw - 24px));
+  }
+
+  .smp-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--smp-z-sidebar) - 1);
+    background: color-mix(in srgb, var(--smp-ink) 28%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--smp-duration) var(--smp-ease-out);
+  }
+
+  .smp-shell[data-mobile-nav="true"] .smp-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .smp-main__inner {
+    padding: var(--smp-space-6) var(--smp-space-4) var(--smp-space-8);
+  }
+
+  .smp-page-hero__title {
+    font-size: var(--smp-text-2xl);
+  }
+}
+
+@media (max-width: 640px) {
+  .smp-navbar__eyebrow {
+    display: none;
+  }
+}
