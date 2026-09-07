@@ -4,23 +4,74 @@ import { memo, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PanelLeft, PanelLeftClose, Sparkles } from "lucide-react";
-import { NAVIGATION } from "@/lib/navigation";
+import { MOBILE_NAV_QUERY } from "@/hooks/use-media-query";
+import {
+  NAVIGATION,
+  UTILITY_NAV,
+  formatBadgeCount,
+  isNavItemActive,
+  type NavItem,
+} from "@/lib/navigation";
 import { useUIStore } from "@/store/use-ui-store";
 import { useShell } from "./shell-context";
 
+const SidebarNavItem = memo(function SidebarNavItem({
+  item,
+  active,
+  onNavClick,
+}: {
+  item: NavItem;
+  active: boolean;
+  onNavClick: () => void;
+}) {
+  const Icon = item.icon;
+  const badgeLabel = formatBadgeCount(item.badge ?? 0);
+  const tooltip = badgeLabel ? `${item.label} · ${badgeLabel}` : item.label;
+
+  return (
+    <div className="smp-nav-slot">
+      <Link
+        href={item.href}
+        className="smp-nav-item"
+        data-active={active ? "true" : "false"}
+        onClick={onNavClick}
+        prefetch
+        aria-current={active ? "page" : undefined}
+        aria-label={
+          badgeLabel ? `${item.label}, ${badgeLabel} pending` : item.label
+        }
+      >
+        <span className="smp-nav-item__icon" aria-hidden="true">
+          <Icon strokeWidth={1.75} />
+          {badgeLabel ? <span className="smp-nav-item__dot" /> : null}
+        </span>
+        <span className="smp-nav-item__label">{item.label}</span>
+        {badgeLabel ? (
+          <span className="smp-nav-item__badge">{badgeLabel}</span>
+        ) : null}
+      </Link>
+      <span className="smp-nav-item__tooltip" aria-hidden="true">
+        {tooltip}
+      </span>
+    </div>
+  );
+});
+
 function SidebarComponent() {
   const pathname = usePathname();
-  const { sidebarCollapsed, toggleSidebar, isMobile } = useShell();
+  const { sidebarCollapsed, toggleSidebar } = useShell();
   const closeMobileNav = useUIStore((s) => s.closeMobileNav);
 
   const onBrandControlClick = useCallback(() => {
-    if (isMobile) return;
+    if (window.matchMedia(MOBILE_NAV_QUERY).matches) return;
     toggleSidebar();
-  }, [isMobile, toggleSidebar]);
+  }, [toggleSidebar]);
 
   const onNavClick = useCallback(() => {
     closeMobileNav();
   }, [closeMobileNav]);
+
+  const brandAction = sidebarCollapsed ? "Show labels" : "Icon rail";
 
   return (
     <aside className="smp-sidebar" aria-label="Primary">
@@ -29,16 +80,9 @@ function SidebarComponent() {
           type="button"
           className="smp-sidebar__brand-control"
           onClick={onBrandControlClick}
-          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          aria-pressed={sidebarCollapsed}
-          title={
-            isMobile
-              ? "Schola"
-              : sidebarCollapsed
-                ? "Expand sidebar"
-                : "Collapse sidebar"
-          }
-          tabIndex={isMobile ? -1 : 0}
+          aria-label={brandAction}
+          aria-pressed={!sidebarCollapsed}
+          tabIndex={0}
         >
           <span
             className="smp-sidebar__brand-face smp-sidebar__brand-face--mark"
@@ -58,10 +102,9 @@ function SidebarComponent() {
           </span>
         </button>
 
-        <div
-          className="smp-sidebar__brand-copy"
-          aria-hidden={sidebarCollapsed && !isMobile}
-        >
+        <div className="smp-sidebar__brand-spacer" aria-hidden="true" />
+
+        <div className="smp-sidebar__brand-copy">
           <span className="smp-sidebar__brand-name">Schola</span>
           <span className="smp-sidebar__brand-meta">Campus OS</span>
         </div>
@@ -73,45 +116,33 @@ function SidebarComponent() {
             <div className="smp-sidebar__group-label">{group.label}</div>
             <nav className="smp-sidebar__nav" aria-label={group.label}>
               {group.items.map((item) => {
-                const Icon = item.icon;
-                const active =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname === item.href ||
-                      pathname.startsWith(`${item.href}/`);
+                const active = isNavItemActive(pathname, item.href);
 
                 return (
-                  <Link
+                  <SidebarNavItem
                     key={item.href}
-                    href={item.href}
-                    className="smp-nav-item"
-                    data-active={active ? "true" : "false"}
-                    onClick={onNavClick}
-                    title={item.label}
-                    prefetch
-                    aria-current={active ? "page" : undefined}
-                    aria-label={
-                      typeof item.badge === "number"
-                        ? `${item.label}, ${item.badge} pending`
-                        : item.label
-                    }
-                  >
-                    <span className="smp-nav-item__icon" aria-hidden="true">
-                      <Icon strokeWidth={1.75} />
-                      {typeof item.badge === "number" ? (
-                        <span className="smp-nav-item__dot" />
-                      ) : null}
-                    </span>
-                    <span className="smp-nav-item__label">{item.label}</span>
-                    {typeof item.badge === "number" ? (
-                      <span className="smp-nav-item__badge">{item.badge}</span>
-                    ) : null}
-                  </Link>
+                    item={item}
+                    active={active}
+                    onNavClick={onNavClick}
+                  />
                 );
               })}
             </nav>
           </div>
         ))}
+      </div>
+
+      <div className="smp-sidebar__foot">
+        <nav className="smp-sidebar__nav" aria-label="Utility">
+          {UTILITY_NAV.map((item) => (
+            <SidebarNavItem
+              key={item.href}
+              item={item}
+              active={isNavItemActive(pathname, item.href)}
+              onNavClick={onNavClick}
+            />
+          ))}
+        </nav>
       </div>
     </aside>
   );

@@ -2,17 +2,20 @@
 
 import {
   Suspense,
-  startTransition,
+  memo,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useState,
 } from "react";
 import { usePathname } from "next/navigation";
-import { MOBILE_NAV_QUERY, useMediaQuery } from "@/hooks/use-media-query";
-import { afterPaint, runIdle } from "@/lib/schedule";
+import { MOBILE_NAV_QUERY } from "@/hooks/use-media-query";
+import { runIdle } from "@/lib/schedule";
 import {
   LEGACY_UI_STORAGE_KEY,
-  writeSidebarCookie,
+  readSidebarCookieClient,
+  readSidebarStorage,
+  writeSidebarPreference,
 } from "@/lib/sidebar-preference";
 import { useUIStore } from "@/store/use-ui-store";
 import { Navbar } from "./Navbar";
@@ -40,43 +43,64 @@ function readLegacyCollapsed(): boolean {
 }
 
 function persistCollapsed(next: boolean) {
-  writeSidebarCookie(next);
-  document.documentElement.setAttribute(
-    "data-sidebar-collapsed",
-    next ? "true" : "false",
-  );
+  writeSidebarPreference(next);
 }
+
+const ShellCanvas = memo(function ShellCanvas({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="smp-shell__canvas">
+      <Navbar />
+      <main className="smp-main">
+        <div className="smp-main__inner">
+          <Suspense fallback={<PageFallback />}>{children}</Suspense>
+        </div>
+      </main>
+    </div>
+  );
+});
 
 export function AppShell({ children, initialCollapsed }: AppShellProps) {
   const pathname = usePathname();
-  const isMobile = useMediaQuery(MOBILE_NAV_QUERY);
   const mobileNavOpen = useUIStore((s) => s.mobileNavOpen);
   const closeMobileNav = useUIStore((s) => s.closeMobileNav);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(initialCollapsed);
   const [animationsReady, setAnimationsReady] = useState(false);
 
-  useEffect(() => {
-    const id = window.requestAnimationFrame(() => {
-      startTransition(() => setAnimationsReady(true));
-    });
+  useLayoutEffect(() => {
+    const fromCookie = readSidebarCookieClient();
+    const fromStorage = readSidebarStorage();
+    const stored = fromCookie ?? fromStorage;
+
+    if (stored !== null && stored !== initialCollapsed) {
+      setSidebarCollapsed(stored);
+      persistCollapsed(stored);
+    } else {
+      persistCollapsed(stored ?? initialCollapsed);
+    }
 
     if (!initialCollapsed && readLegacyCollapsed()) {
       persistCollapsed(true);
-      startTransition(() => setSidebarCollapsed(true));
+      setSidebarCollapsed(true);
     }
-
-    return () => window.cancelAnimationFrame(id);
   }, [initialCollapsed]);
 
+  useEffect(() => {
+    const id = window.requestAnimationFrame(() => {
+      setAnimationsReady(true);
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, []);
+
   const toggleSidebar = useCallback(() => {
-    // Urgent visual update; persist off the critical path
-    startTransition(() => {
-      setSidebarCollapsed((current) => {
-        const next = !current;
-        afterPaint(() => persistCollapsed(next));
-        return next;
-      });
+    setSidebarCollapsed((current) => {
+      const next = !current;
+      persistCollapsed(next);
+      return next;
     });
   }, []);
 
@@ -85,11 +109,17 @@ export function AppShell({ children, initialCollapsed }: AppShellProps) {
   }, [pathname, closeMobileNav]);
 
   useEffect(() => {
-    if (!isMobile && mobileNavOpen) closeMobileNav();
-  }, [isMobile, mobileNavOpen, closeMobileNav]);
+    const media = window.matchMedia(MOBILE_NAV_QUERY);
+    const onChange = () => {
+      if (!media.matches) closeMobileNav();
+    };
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, [closeMobileNav]);
 
   useEffect(() => {
-    if (!mobileNavOpen || !isMobile) return;
+    if (!mobileNavOpen) return;
+    if (!window.matchMedia(MOBILE_NAV_QUERY).matches) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeMobileNav();
@@ -103,9 +133,8 @@ export function AppShell({ children, initialCollapsed }: AppShellProps) {
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [mobileNavOpen, isMobile, closeMobileNav]);
+  }, [mobileNavOpen, closeMobileNav]);
 
-  // Warm idle lane — keeps interaction frames free under load
   useEffect(() => {
     runIdle(() => {
       // placeholder for prefetch / telemetry hooks
@@ -116,12 +145,11 @@ export function AppShell({ children, initialCollapsed }: AppShellProps) {
     <ShellProvider
       sidebarCollapsed={sidebarCollapsed}
       toggleSidebar={toggleSidebar}
-      isMobile={isMobile}
     >
       <div
         className="smp-shell"
         data-sidebar-collapsed={sidebarCollapsed ? "true" : "false"}
-        data-mobile-nav={mobileNavOpen && isMobile ? "true" : "false"}
+        data-mobile-nav={mobileNavOpen ? "true" : "false"}
         data-ready={animationsReady ? "true" : "false"}
       >
         <Sidebar />
@@ -129,18 +157,10 @@ export function AppShell({ children, initialCollapsed }: AppShellProps) {
           type="button"
           className="smp-overlay"
           aria-label="Close navigation"
-          tabIndex={mobileNavOpen && isMobile ? 0 : -1}
+          tabIndex={mobileNavOpen ? 0 : -1}
           onClick={closeMobileNav}
         />
-        <div className="smp-shell__canvas">
-          <Navbar />
-          <main className="smp-main">
-            <div className="smp-main__inner">
-              {/* Chrome stays mounted; page work is interruptible */}
-              <Suspense fallback={<PageFallback />}>{children}</Suspense>
-            </div>
-          </main>
-        </div>
+        <ShellCanvas>{children}</ShellCanvas>
       </div>
     </ShellProvider>
   );

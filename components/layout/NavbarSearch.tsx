@@ -11,6 +11,7 @@ function NavbarSearchComponent() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.repeat) return;
       const isMod = event.metaKey || event.ctrlKey;
       if (!isMod || event.key.toLowerCase() !== "k") return;
       event.preventDefault();
@@ -37,7 +38,7 @@ function NavbarSearchComponent() {
         ref={inputRef}
         type="search"
         className="smp-search__input"
-        placeholder="Search campus"
+        placeholder="Search"
         autoComplete="off"
         spellCheck={false}
         value={query}

@@ -16,9 +16,10 @@ export default function OverviewPage() {
           Navigation, state, and design tokens are in place.
         </h3>
         <p className="smp-page-panel__body">
-          The shell uses a centralized design system (`#F1FEC8` · `#23212C`),
-          Zustand for sidebar and page meta, and Lucide for a single icon language.
-          Next modules can plug into this layout without reinventing structure.
+          The shell uses a centralized design system — Apple blue on a cool
+          light canvas, true black in dark mode — with Zustand for sidebar and
+          page meta, and Lucide for a single icon language. Next modules can
+          plug into this layout without reinventing structure.
         </p>
       </section>
     </>

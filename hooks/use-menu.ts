@@ -24,7 +24,8 @@ export function useMenu({ open, onClose }: UseMenuOptions) {
   useEffect(() => {
     if (!open) return;
 
-    const onPointerDown = (event: MouseEvent) => {
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
       const root = rootRef.current;
       if (!root) return;
       if (event.target instanceof Node && !root.contains(event.target)) {
@@ -36,11 +37,11 @@ export function useMenu({ open, onClose }: UseMenuOptions) {
       if (event.key === "Escape") handleClose();
     };
 
-    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("pointerdown", onPointerDown, true);
     document.addEventListener("keydown", onKeyDown);
 
     return () => {
-      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("pointerdown", onPointerDown, true);
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [open, handleClose]);

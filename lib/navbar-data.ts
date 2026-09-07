@@ -94,6 +94,12 @@ export const LOGOUT_ACTION: ProfileAction = {
   tone: "danger",
 };
 
-export function unreadNotificationCount(items: NotificationItem[] = NOTIFICATIONS) {
-  return items.filter((item) => item.unread).length;
+export function unreadNotificationCount(
+  items: readonly NotificationItem[] = NOTIFICATIONS,
+) {
+  let unread = 0;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].unread) unread += 1;
+  }
+  return unread;
 }

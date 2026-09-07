@@ -5,7 +5,6 @@ import { createContext, useContext, useMemo, type ReactNode } from "react";
 type ShellContextValue = {
   sidebarCollapsed: boolean;
   toggleSidebar: () => void;
-  isMobile: boolean;
 };
 
 const ShellContext = createContext<ShellContextValue | null>(null);
@@ -13,17 +12,15 @@ const ShellContext = createContext<ShellContextValue | null>(null);
 export function ShellProvider({
   sidebarCollapsed,
   toggleSidebar,
-  isMobile,
   children,
 }: {
   sidebarCollapsed: boolean;
   toggleSidebar: () => void;
-  isMobile: boolean;
   children: ReactNode;
 }) {
   const value = useMemo(
-    () => ({ sidebarCollapsed, toggleSidebar, isMobile }),
-    [sidebarCollapsed, toggleSidebar, isMobile],
+    () => ({ sidebarCollapsed, toggleSidebar }),
+    [sidebarCollapsed, toggleSidebar],
   );
 
   return (

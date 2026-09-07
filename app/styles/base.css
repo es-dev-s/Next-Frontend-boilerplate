@@ -10,9 +10,14 @@
 
 html {
   height: 100%;
+  color-scheme: light;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 body {
@@ -66,7 +71,7 @@ button:disabled {
 
 ::selection {
   background: var(--smp-accent);
-  color: var(--smp-ink);
+  color: var(--smp-accent-on);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -77,8 +82,8 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--smp-radius-sm);
   color: var(--smp-ink-secondary);
   transition:
@@ -97,12 +102,12 @@ button:disabled {
 }
 
 .smp-icon-btn[data-active="true"] {
-  background: var(--smp-accent);
-  color: var(--smp-ink-primary);
+  background: var(--smp-accent-muted);
+  color: var(--smp-accent);
 }
 
 .smp-icon-btn[data-active="true"]:hover {
-  background: var(--smp-accent-strong);
+  background: color-mix(in srgb, var(--smp-accent) 22%, transparent);
 }
 
 .smp-kbd {

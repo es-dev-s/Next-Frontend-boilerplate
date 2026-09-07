@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Menu panel surface — matches sidebar color (#fff / --smp-surface)
+   Menu panel surface — matches sidebar color (--smp-surface)
    Keeps a light edge + soft depth so the panel still reads as lifted chrome.
    ========================================================================== */
 
@@ -10,8 +10,8 @@
   border: 1px solid var(--smp-border);
   border-radius: 22px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 16px 40px -12px color-mix(in srgb, var(--smp-ink) 12%, transparent);
+    inset 0 1px 0 var(--smp-glass-highlight),
+    0 16px 40px -12px var(--smp-glass-shadow);
 }
 
 /* Soft top light — subtle, not frosted glass */
@@ -22,7 +22,7 @@
   border-radius: inherit;
   background: linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0.35),
+    var(--smp-glass-sheen),
     transparent 40%
   );
   pointer-events: none;

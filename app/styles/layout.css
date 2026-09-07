@@ -1,59 +1,23 @@
 /* ==========================================================================
-   App shell — fixed sidebar + synced canvas inset
-   Pattern: Notion / Linear — one shared width token drives both sidebar
-   width and content inset on the same timing curve (no desync / jump).
-   Collapsed mode removes section labels from flow (display:none), not fade.
+   App shell — icon rail + overlay labels
+   Canvas inset is locked to the icon rail so page content never reflows.
+   Expanding grows the sidebar over the canvas; the icon column stays put.
    ========================================================================== */
 
 .smp-shell {
-  --smp-sidebar-current: var(--smp-sidebar-width);
+  --smp-sidebar-current: var(--smp-sidebar-width-collapsed);
   position: relative;
   min-height: 100dvh;
   background: var(--smp-bg);
   padding-left: var(--smp-sidebar-current);
-  transition: padding-left var(--smp-duration) var(--smp-ease-out);
-}
-
-.smp-shell[data-sidebar-collapsed="true"] {
-  --smp-sidebar-current: var(--smp-sidebar-width-collapsed);
-}
-
-/*
-  Pre-paint + SSR fallback (desktop only): cookie/bootstrap stamp
-  html[data-sidebar-collapsed] so labels never flash before React.
-*/
-@media (min-width: 961px) {
-  html[data-sidebar-collapsed="true"] .smp-shell {
-    --smp-sidebar-current: var(--smp-sidebar-width-collapsed);
-  }
-
-  html[data-sidebar-collapsed="true"] .smp-sidebar__brand-copy,
-  html[data-sidebar-collapsed="true"] .smp-sidebar__group-label,
-  html[data-sidebar-collapsed="true"] .smp-nav-item__label,
-  html[data-sidebar-collapsed="true"] .smp-nav-item__badge {
-    display: none;
-  }
-
-  html[data-sidebar-collapsed="true"] .smp-sidebar__group + .smp-sidebar__group {
-    margin-top: var(--smp-space-2);
-    padding-top: var(--smp-space-2);
-    border-top: 1px solid var(--smp-border);
-  }
-
-  html[data-sidebar-collapsed="true"] .smp-nav-item {
-    width: 40px;
-    gap: 0;
-    overflow: hidden;
-  }
-
-  html[data-sidebar-collapsed="true"] .smp-nav-item__dot {
-    display: block;
-  }
 }
 
 /* No width tween until client mount — toggle animations only after ready */
 .smp-shell[data-ready="false"],
-.smp-shell[data-ready="false"] .smp-sidebar {
+.smp-shell[data-ready="false"] .smp-sidebar,
+.smp-shell[data-ready="false"] .smp-sidebar__group-label,
+.smp-shell[data-ready="false"] .smp-sidebar__group + .smp-sidebar__group,
+.smp-shell[data-ready="false"] .smp-sidebar__nav {
   transition: none !important;
 }
 
@@ -62,6 +26,9 @@
   .smp-sidebar,
   .smp-overlay,
   .smp-sidebar__brand-face,
+  .smp-sidebar__group-label,
+  .smp-sidebar__group + .smp-sidebar__group,
+  .smp-sidebar__nav,
   .smp-nav-item {
     transition: none !important;
   }
@@ -75,7 +42,7 @@
 }
 
 /* -------------------------------------------------------------------------- */
-/* Sidebar — fixed; width locked to the same token as canvas inset            */
+/* Sidebar — icon rail. Padding on the canvas never changes.                  */
 /* -------------------------------------------------------------------------- */
 
 .smp-sidebar {
@@ -83,37 +50,40 @@
   top: 0;
   left: 0;
   bottom: 0;
-  z-index: var(--smp-z-sidebar);
+  z-index: calc(var(--smp-z-navbar) + 1);
   display: flex;
   flex-direction: column;
-  width: var(--smp-sidebar-current);
+  width: var(--smp-sidebar-width-collapsed);
   background: var(--smp-surface);
   border-right: 1px solid var(--smp-border);
-  overflow: hidden;
-  transition: width var(--smp-duration) var(--smp-ease-out);
+  overflow: visible;
+  box-shadow: var(--smp-sidebar-shadow);
+  transition:
+    width var(--smp-sidebar-duration) var(--smp-sidebar-ease),
+    box-shadow var(--smp-sidebar-duration) var(--smp-sidebar-ease);
 }
 
-/* Brand row — fixed 40px control column (same x as nav icons; no horizontal shift) */
+/* Brand row — mark locked at the rail pad so it never shifts horizontally */
 .smp-sidebar__brand {
   display: flex;
   align-items: center;
-  gap: 10px;
   height: var(--smp-navbar-height);
-  padding: 0 16px;
-  border-bottom: 1px solid var(--smp-border);
+  padding: 0 var(--smp-sidebar-rail-pad);
   flex-shrink: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .smp-sidebar__brand-control {
   position: relative;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: var(--smp-sidebar-icon);
+  height: var(--smp-sidebar-icon);
   flex-shrink: 0;
   border-radius: 10px;
   background: var(--smp-accent);
-  color: var(--smp-ink);
+  color: var(--smp-accent-on);
   transition: background-color var(--smp-duration-fast) var(--smp-ease-out);
 }
 
@@ -143,7 +113,6 @@
   height: 18px;
 }
 
-/* Default: platform mark visible; action icon hidden until hover/focus */
 .smp-sidebar__brand-face--mark {
   opacity: 1;
 }
@@ -162,12 +131,21 @@
   opacity: 1;
 }
 
+.smp-sidebar__brand-spacer {
+  flex: 0 1 10px;
+  width: 10px;
+  min-width: 0;
+  height: 1px;
+  pointer-events: none;
+}
+
 .smp-sidebar__brand-copy {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 1px;
   min-width: 0;
-  flex: 1;
+  flex: 1 1 0;
   overflow: hidden;
 }
 
@@ -190,24 +168,21 @@
   white-space: nowrap;
 }
 
-/* Collapse: remove brand text from layout entirely (no reserved gap) */
-.smp-shell[data-sidebar-collapsed="true"] .smp-sidebar__brand-copy {
-  display: none;
-}
-
 /* -------------------------------------------------------------------------- */
-/* Nav scroll                                                                 */
+/* Nav scroll — 16px rail pad keeps the 40px icon column optically centered   */
 /* -------------------------------------------------------------------------- */
 
 .smp-sidebar__scroll {
   flex: 1;
-  overflow-x: hidden;
-  overflow-y: auto;
-  /* 16px = (72 − 40) / 2 — keeps icon column locked while width changes */
-  padding: var(--smp-space-3) 16px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--smp-ink-quaternary) transparent;
-  contain: layout paint;
+  min-height: 0;
+  overflow: visible;
+  padding: var(--smp-space-3) var(--smp-sidebar-rail-pad);
+}
+
+.smp-sidebar__foot {
+  flex-shrink: 0;
+  padding: var(--smp-space-3) var(--smp-sidebar-rail-pad);
+  overflow: visible;
 }
 
 .smp-sidebar__group {
@@ -215,65 +190,65 @@
   flex-direction: column;
 }
 
-/* Expanded: labeled sections with breathing room */
 .smp-sidebar__group + .smp-sidebar__group {
-  margin-top: var(--smp-space-5);
+  margin-top: 0;
+  transition: margin-top var(--smp-sidebar-duration) var(--smp-sidebar-ease);
 }
 
 .smp-sidebar__group-label {
   display: flex;
   align-items: center;
-  height: 28px;
+  height: 0;
+  margin: 0;
   padding: 0 10px;
-  margin-bottom: var(--smp-space-1);
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
   font-size: 11px;
   font-weight: var(--smp-weight-semibold);
   letter-spacing: var(--smp-tracking-wide);
   text-transform: uppercase;
   color: var(--smp-ink-tertiary);
   white-space: nowrap;
-}
-
-/*
-  Collapsed (icon rail) — professional pattern:
-  - Section labels are removed from flow (display: none), not faded
-  - Groups collapse into one continuous icon stack
-  - Tiny hairline dividers separate groups (no empty header gaps)
-*/
-.smp-shell[data-sidebar-collapsed="true"] .smp-sidebar__group-label {
-  display: none;
-}
-
-.smp-shell[data-sidebar-collapsed="true"] .smp-sidebar__group + .smp-sidebar__group {
-  margin-top: var(--smp-space-2);
-  padding-top: var(--smp-space-2);
-  border-top: 1px solid var(--smp-border);
+  transition:
+    height var(--smp-sidebar-duration) var(--smp-sidebar-ease),
+    margin var(--smp-sidebar-duration) var(--smp-sidebar-ease),
+    opacity var(--smp-sidebar-duration) var(--smp-sidebar-ease);
 }
 
 .smp-sidebar__nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
+  width: 100%;
+  transition: gap var(--smp-sidebar-duration) var(--smp-sidebar-ease);
 }
 
 /* -------------------------------------------------------------------------- */
-/* Nav items — 40×40 icon column stays fixed; labels clip away on collapse    */
+/* Nav items — 40×40 tiles. Labels clip with width; they never reflow icons.  */
 /* -------------------------------------------------------------------------- */
+
+.smp-nav-slot {
+  position: relative;
+  width: 100%;
+}
 
 .smp-nav-item {
   position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 40px;
+  width: 100%;
+  height: var(--smp-sidebar-icon);
+  min-height: var(--smp-sidebar-icon);
   padding: 0;
   border-radius: var(--smp-radius-sm);
   color: var(--smp-ink-secondary);
   font-size: var(--smp-text-sm);
   font-weight: var(--smp-weight-medium);
   letter-spacing: var(--smp-tracking-normal);
-  content-visibility: auto;
-  contain-intrinsic-size: auto 40px;
+  overflow: hidden;
+  flex-shrink: 0;
   transition:
     background-color var(--smp-duration-fast) var(--smp-ease-out),
     color var(--smp-duration-fast) var(--smp-ease-out);
@@ -283,8 +258,8 @@
   position: relative;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: var(--smp-sidebar-icon);
+  height: var(--smp-sidebar-icon);
   flex-shrink: 0;
   border-radius: var(--smp-radius-sm);
   color: currentColor;
@@ -296,9 +271,9 @@
 }
 
 .smp-nav-item__label {
-  flex: 1;
+  display: block;
+  flex: 1 1 0;
   min-width: 0;
-  padding-right: 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -310,7 +285,8 @@
   justify-content: center;
   min-width: 18px;
   height: 18px;
-  padding: 0 5px;
+  margin-inline-end: 10px;
+  padding: 0 6px;
   border-radius: var(--smp-radius-pill);
   background: var(--smp-ink);
   color: var(--smp-ink-inverse);
@@ -321,10 +297,10 @@
 }
 
 .smp-nav-item__dot {
-  display: none;
+  display: block;
   position: absolute;
-  top: -2px;
-  right: -2px;
+  top: 5px;
+  right: 5px;
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -344,35 +320,167 @@
 
 .smp-nav-item[data-active="true"] {
   background: var(--smp-accent);
-  color: var(--smp-ink-primary);
+  color: var(--smp-accent-on);
 }
 
 .smp-nav-item[data-active="true"]:hover {
   background: var(--smp-accent-strong);
+  color: var(--smp-accent-on);
 }
 
 .smp-nav-item[data-active="true"]:active {
   background: var(--smp-accent-press);
+  color: var(--smp-accent-on);
 }
 
 .smp-nav-item[data-active="true"] .smp-nav-item__badge {
+  background: var(--smp-accent-on);
+  color: var(--smp-accent);
+}
+
+.smp-nav-item[data-active="true"] .smp-nav-item__dot {
+  background: var(--smp-accent-on);
+  box-shadow: 0 0 0 2px var(--smp-accent);
+}
+
+/* Tooltips — sit beside the rail; never in layout */
+.smp-nav-item__tooltip {
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  z-index: var(--smp-z-popover);
+  padding: 5px 9px;
+  border-radius: 7px;
   background: var(--smp-ink);
+  color: var(--smp-ink-inverse);
+  font-size: 12px;
+  font-weight: var(--smp-weight-medium);
+  letter-spacing: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  transform: translate(-4px, -50%);
+  box-shadow: var(--smp-shadow-sm);
+  transition:
+    opacity var(--smp-duration-fast) var(--smp-ease-out),
+    transform var(--smp-duration-fast) var(--smp-ease-out),
+    visibility 0s linear 280ms;
 }
 
-/* Collapsed: clip to icon column only — icons do not re-center or jump */
-.smp-shell[data-sidebar-collapsed="true"] .smp-nav-item {
-  width: 40px;
-  gap: 0;
-  overflow: hidden;
+.smp-nav-slot:hover .smp-nav-item__tooltip,
+.smp-nav-slot:focus-within .smp-nav-item__tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translate(0, -50%);
+  transition-delay: 280ms;
+  transition-property: opacity, transform, visibility;
 }
 
-.smp-shell[data-sidebar-collapsed="true"] .smp-nav-item__label,
-.smp-shell[data-sidebar-collapsed="true"] .smp-nav-item__badge {
-  display: none;
+.smp-nav-slot:focus-within .smp-nav-item__tooltip {
+  transition-delay: 0ms;
 }
 
-.smp-shell[data-sidebar-collapsed="true"] .smp-nav-item__dot {
-  display: block;
+@media (prefers-reduced-motion: reduce) {
+  .smp-nav-item__tooltip {
+    transition: none;
+  }
+
+  .smp-nav-slot:hover .smp-nav-item__tooltip,
+  .smp-nav-slot:focus-within .smp-nav-item__tooltip {
+    transition-delay: 0ms;
+  }
+}
+
+/* Desktop overlay — same width tween clips brand + labels together */
+@media (min-width: 961px) {
+  .smp-shell[data-sidebar-collapsed="false"] .smp-sidebar {
+    width: var(--smp-sidebar-width);
+    box-shadow: var(--smp-sidebar-shadow-open);
+  }
+
+  .smp-shell[data-sidebar-collapsed="false"] .smp-nav-item__dot,
+  .smp-shell[data-sidebar-collapsed="false"] .smp-nav-item__tooltip {
+    display: none;
+  }
+
+  .smp-shell[data-sidebar-collapsed="false"] .smp-sidebar__scroll {
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--smp-ink-quaternary) transparent;
+  }
+
+  .smp-shell[data-sidebar-collapsed="false"] .smp-sidebar__foot {
+    overflow-x: hidden;
+  }
+
+  .smp-shell[data-sidebar-collapsed="false"] .smp-sidebar__group-label {
+    height: 22px;
+    margin-bottom: 6px;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .smp-shell[data-sidebar-collapsed="false"] .smp-sidebar__group + .smp-sidebar__group {
+    margin-top: 18px;
+  }
+
+  .smp-shell[data-sidebar-collapsed="false"] .smp-sidebar__nav {
+    gap: 4px;
+  }
+
+  /* Icon rail — hover/selected sit inset so the pill has a little air */
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item {
+    background: transparent;
+  }
+
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item::before {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: 8px;
+    background: transparent;
+    pointer-events: none;
+    z-index: 0;
+    transition: background-color var(--smp-duration-fast) var(--smp-ease-out);
+  }
+
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item__icon,
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item__label,
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item__badge {
+    position: relative;
+    z-index: 1;
+  }
+
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item:hover,
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item:active,
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item[data-active="true"],
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item[data-active="true"]:hover,
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item[data-active="true"]:active {
+    background: transparent;
+  }
+
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item:hover::before {
+    background: var(--smp-hover);
+  }
+
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item:active::before {
+    background: var(--smp-hover-strong);
+  }
+
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item[data-active="true"]::before {
+    background: var(--smp-accent);
+  }
+
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item[data-active="true"]:hover::before {
+    background: var(--smp-accent-strong);
+  }
+
+  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item[data-active="true"]:active::before {
+    background: var(--smp-accent-press);
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -386,9 +494,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--smp-space-4);
+  gap: 16px;
   height: var(--smp-navbar-height);
-  padding: 0 var(--smp-space-6);
+  padding: 0 var(--smp-space-4);
   background: var(--smp-bg);
   border-bottom: 1px solid var(--smp-border);
 }
@@ -397,49 +505,116 @@
 .smp-navbar__right {
   display: flex;
   align-items: center;
-  gap: var(--smp-space-3);
   min-width: 0;
 }
 
 .smp-navbar__left {
   flex: 1;
+  gap: var(--smp-space-3);
+}
+
+.smp-navbar__right {
+  flex: 0 0 auto;
+  gap: 10px;
 }
 
 .smp-navbar__mobile-toggle {
   display: none;
 }
 
-.smp-navbar__title-block {
+.smp-navbar__actions {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 2px;
+}
+
+.smp-crumbs {
   min-width: 0;
 }
 
-.smp-navbar__eyebrow {
-  font-size: 11px;
-  font-weight: var(--smp-weight-medium);
-  letter-spacing: var(--smp-tracking-wide);
-  text-transform: uppercase;
-  color: var(--smp-ink-tertiary);
+.smp-crumbs__list {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.smp-crumb {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.smp-crumb[data-current="false"] {
+  flex: 0 1 auto;
+  max-width: 10.5rem;
+}
+
+.smp-crumb[data-current="true"] {
+  flex: 0 1 auto;
+  min-width: 3.5rem;
+}
+
+.smp-crumb__sep {
+  width: 12px;
+  height: 12px;
+  margin: 0 5px;
+  flex-shrink: 0;
+  color: var(--smp-ink-quaternary);
+}
+
+.smp-crumb__label {
+  display: block;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   line-height: 1.2;
 }
 
-.smp-navbar__title {
-  margin: 0;
-  font-size: var(--smp-text-lg);
+.smp-crumb[data-current="false"] .smp-crumb__label {
+  font-size: 13px;
+  font-weight: var(--smp-weight-medium);
+  color: var(--smp-ink-tertiary);
+  letter-spacing: var(--smp-tracking-normal);
+}
+
+.smp-crumb[data-current="true"] .smp-crumb__label {
+  font-size: var(--smp-text-md);
   font-weight: var(--smp-weight-semibold);
   letter-spacing: var(--smp-tracking-tight);
-  line-height: var(--smp-leading-tight);
   color: var(--smp-ink-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.smp-crumb__link {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  border-radius: 6px;
+  padding: 3px 5px;
+  margin: -3px -5px;
+  transition:
+    background-color var(--smp-duration-fast) var(--smp-ease-out),
+    color var(--smp-duration-fast) var(--smp-ease-out);
+}
+
+.smp-crumb__link:hover .smp-crumb__label {
+  color: var(--smp-ink-secondary);
+}
+
+.smp-crumb__link:hover {
+  background: var(--smp-hover);
+}
+
+.smp-crumb__link:active {
+  background: var(--smp-hover-strong);
 }
 
 .smp-navbar__divider {
   width: 1px;
-  height: 22px;
+  height: 16px;
   background: var(--smp-border);
   flex-shrink: 0;
 }
@@ -447,10 +622,10 @@
 .smp-navbar__user {
   display: flex;
   align-items: center;
-  gap: var(--smp-space-3);
-  height: 40px;
-  padding: 0 var(--smp-space-2);
-  border-radius: var(--smp-radius-md);
+  gap: 8px;
+  height: 32px;
+  padding: 0 6px 0 3px;
+  border-radius: 8px;
   transition:
     background-color var(--smp-duration-fast) var(--smp-ease-out),
     color var(--smp-duration-fast) var(--smp-ease-out);
@@ -471,12 +646,12 @@
 .smp-navbar__avatar {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: var(--smp-ink);
-  color: var(--smp-accent);
-  font-size: 11px;
+  color: var(--smp-ink-inverse);
+  font-size: 10px;
   font-weight: var(--smp-weight-semibold);
   letter-spacing: 0.02em;
   flex-shrink: 0;
@@ -512,9 +687,8 @@
 .smp-main {
   min-width: 0;
   overflow: auto;
-  /* Isolate page paint from chrome — heavy page updates won't repaint shell */
+  overflow-anchor: none;
   contain: layout paint style;
-  content-visibility: auto;
 }
 
 .smp-main__inner {
@@ -631,11 +805,203 @@
   width: fit-content;
   padding: 6px 10px;
   border-radius: var(--smp-radius-pill);
-  background: var(--smp-accent);
-  color: var(--smp-ink);
+  background: var(--smp-accent-muted);
+  color: var(--smp-accent);
   font-size: var(--smp-text-xs);
   font-weight: var(--smp-weight-semibold);
   letter-spacing: 0.02em;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Appearance picker                                                          */
+/* -------------------------------------------------------------------------- */
+
+.smp-appearance {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--smp-space-3);
+  margin-top: var(--smp-space-2);
+  width: min(100%, 42rem);
+}
+
+.smp-appearance__option {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border-radius: var(--smp-radius-md);
+  border: 1px solid var(--smp-border);
+  background: var(--smp-surface-sunken);
+  text-align: left;
+  transition:
+    border-color var(--smp-duration-fast) var(--smp-ease-out),
+    box-shadow var(--smp-duration-fast) var(--smp-ease-out),
+    background-color var(--smp-duration-fast) var(--smp-ease-out);
+}
+
+.smp-appearance__option:hover {
+  border-color: var(--smp-border-strong);
+}
+
+.smp-appearance__option[data-active="true"] {
+  border-color: var(--smp-accent);
+  background: var(--smp-surface);
+  box-shadow: 0 0 0 3px var(--smp-accent-muted);
+}
+
+.smp-appearance__swatch {
+  display: block;
+  height: 72px;
+  border-radius: 10px;
+  border: 1px solid var(--smp-border);
+  overflow: hidden;
+  position: relative;
+}
+
+.smp-appearance__swatch::before,
+.smp-appearance__swatch::after {
+  content: "";
+  position: absolute;
+  border-radius: 4px;
+}
+
+.smp-appearance__swatch--light {
+  background: #f5f5f7;
+}
+
+.smp-appearance__swatch--light::before {
+  top: 10px;
+  left: 10px;
+  width: 18px;
+  height: 52px;
+  background: #ffffff;
+  border: 1px solid rgba(60, 60, 67, 0.1);
+}
+
+.smp-appearance__swatch--light::after {
+  top: 18px;
+  left: 36px;
+  width: 42px;
+  height: 8px;
+  background: #007aff;
+}
+
+.smp-appearance__swatch--dark {
+  background: #000000;
+}
+
+.smp-appearance__swatch--dark::before {
+  top: 10px;
+  left: 10px;
+  width: 18px;
+  height: 52px;
+  background: #1c1c1e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.smp-appearance__swatch--dark::after {
+  top: 18px;
+  left: 36px;
+  width: 42px;
+  height: 8px;
+  background: #0a84ff;
+}
+
+.smp-appearance__swatch--system {
+  background: linear-gradient(90deg, #f5f5f7 50%, #000000 50%);
+}
+
+.smp-appearance__swatch--system::before {
+  top: 10px;
+  left: 10px;
+  width: 18px;
+  height: 52px;
+  background: linear-gradient(90deg, #ffffff 50%, #1c1c1e 50%);
+  border: 1px solid rgba(60, 60, 67, 0.12);
+}
+
+.smp-appearance__swatch--system::after {
+  top: 18px;
+  left: 36px;
+  width: 42px;
+  height: 8px;
+  background: linear-gradient(90deg, #007aff 50%, #0a84ff 50%);
+}
+
+.smp-appearance__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.smp-appearance__icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--smp-surface);
+  color: var(--smp-ink-secondary);
+  flex-shrink: 0;
+}
+
+.smp-appearance__option[data-active="true"] .smp-appearance__icon {
+  background: var(--smp-accent-muted);
+  color: var(--smp-accent);
+}
+
+.smp-appearance__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.smp-appearance__label {
+  font-size: var(--smp-text-sm);
+  font-weight: var(--smp-weight-semibold);
+  color: var(--smp-ink-primary);
+  letter-spacing: var(--smp-tracking-tight);
+}
+
+.smp-appearance__desc {
+  font-size: 11px;
+  color: var(--smp-ink-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.smp-theme-toggle {
+  position: relative;
+}
+
+.smp-theme-toggle__icon {
+  display: grid;
+  place-items: center;
+}
+
+.smp-theme-toggle__icon--sun {
+  display: none;
+}
+
+html[data-theme="dark"] .smp-theme-toggle__icon--moon {
+  display: none;
+}
+
+html[data-theme="dark"] .smp-theme-toggle__icon--sun {
+  display: grid;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .smp-theme-toggle__icon--moon {
+    display: none;
+  }
+
+  html:not([data-theme="light"]) .smp-theme-toggle__icon--sun {
+    display: grid;
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -648,53 +1014,63 @@
 
 @media (max-width: 960px) {
   .smp-shell,
-  .smp-shell[data-sidebar-collapsed="true"] {
+  .smp-shell[data-sidebar-collapsed="true"],
+  .smp-shell[data-sidebar-collapsed="false"] {
     --smp-sidebar-current: var(--smp-sidebar-width);
     padding-left: 0;
-    transition: none;
   }
 
   .smp-sidebar {
+    --smp-sidebar-rail-pad: 16px;
+    --smp-sidebar-icon: 40px;
     width: var(--smp-sidebar-width);
+    overflow: hidden;
     transform: translateX(-104%);
     transition: transform var(--smp-duration) var(--smp-ease-out);
+    box-shadow: none;
+    z-index: calc(var(--smp-z-navbar) + 1);
   }
 
   .smp-shell[data-mobile-nav="true"] .smp-sidebar {
     transform: translateX(0);
   }
 
-  /* Mobile drawer always shows the full labeled sidebar */
-  .smp-shell[data-sidebar-collapsed="true"] .smp-sidebar__brand-copy {
+  .smp-sidebar__brand-copy {
     display: flex;
   }
 
-  .smp-shell[data-sidebar-collapsed="true"] .smp-sidebar__group-label {
+  .smp-sidebar__group-label {
     display: flex;
+    height: 22px;
+    margin-bottom: 6px;
+    opacity: 1;
+    pointer-events: auto;
   }
 
-  .smp-shell[data-sidebar-collapsed="true"] .smp-sidebar__group + .smp-sidebar__group {
+  .smp-sidebar__group + .smp-sidebar__group {
     margin-top: var(--smp-space-5);
     padding-top: 0;
     border-top: 0;
   }
 
-  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item {
+  .smp-sidebar__nav {
     width: auto;
-    gap: 10px;
-    overflow: visible;
+    gap: 4px;
   }
 
-  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item__label {
-    display: block;
-    flex: 1;
+  .smp-sidebar__scroll {
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
-  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item__badge {
-    display: inline-flex;
+  .smp-nav-item {
+    width: 100%;
+    height: auto;
+    min-height: var(--smp-sidebar-icon);
   }
 
-  .smp-shell[data-sidebar-collapsed="true"] .smp-nav-item__dot {
+  .smp-nav-item__dot,
+  .smp-nav-item__tooltip {
     display: none;
   }
 
@@ -743,7 +1119,7 @@
     display: block;
     position: fixed;
     inset: 0;
-    z-index: calc(var(--smp-z-sidebar) - 1);
+    z-index: calc(var(--smp-z-navbar) - 1);
     background: color-mix(in srgb, var(--smp-ink) 28%, transparent);
     opacity: 0;
     pointer-events: none;
@@ -764,8 +1140,19 @@
   }
 }
 
-@media (max-width: 640px) {
-  .smp-navbar__eyebrow {
+@media (max-width: 1200px) {
+  .smp-navbar__user-role {
     display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .smp-crumb[data-current="false"],
+  .smp-crumb__sep {
+    display: none;
+  }
+
+  .smp-appearance {
+    grid-template-columns: 1fr;
   }
 }

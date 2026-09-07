@@ -3,6 +3,7 @@
 import { memo, useCallback, useMemo } from "react";
 import { Bell } from "lucide-react";
 import { useMenu } from "@/hooks/use-menu";
+import { formatBadgeCount } from "@/lib/navigation";
 import {
   NOTIFICATIONS,
   type NotificationItem,
@@ -27,7 +28,8 @@ function NotificationMenuComponent({
     onClose: () => onOpenChange(false),
   });
 
-  const unread = useMemo(() => unreadNotificationCount(), []);
+  const unread = useMemo(() => unreadNotificationCount(NOTIFICATIONS), []);
+  const unreadLabel = formatBadgeCount(unread);
 
   const onSelect = useCallback(() => {
     onOpenChange(false);
@@ -67,7 +69,9 @@ function NotificationMenuComponent({
         type="button"
         className="smp-icon-btn smp-menu__trigger"
         aria-label={
-          unread > 0 ? `Notifications, ${unread} unread` : "Notifications"
+          unreadLabel
+            ? `Notifications, ${unreadLabel} unread`
+            : "Notifications"
         }
         aria-haspopup="menu"
         aria-expanded={open}
@@ -75,7 +79,7 @@ function NotificationMenuComponent({
         data-active={open ? "true" : "false"}
         onClick={() => onOpenChange(!open)}
       >
-        <Bell size={18} strokeWidth={1.75} />
+        <Bell size={16} strokeWidth={1.75} />
         <span
           className="smp-menu__dot"
           data-on={unread > 0 ? "true" : "false"}
@@ -95,7 +99,7 @@ function NotificationMenuComponent({
             <div className="smp-popover__heading">
               <span className="smp-popover__title">Notifications</span>
               <span className="smp-popover__meta">
-                {unread > 0 ? `${unread} new` : "You’re caught up"}
+                {unreadLabel ? `${unreadLabel} new` : "You’re caught up"}
               </span>
             </div>
             <button
@@ -115,6 +119,7 @@ function NotificationMenuComponent({
             items={NOTIFICATIONS}
             rowHeight={NOTICE_ROW_HEIGHT}
             height={NOTICE_VIEWPORT}
+            active={open}
             getKey={(item) => item.id}
             renderItem={renderItem}
           />

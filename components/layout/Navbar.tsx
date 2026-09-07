@@ -1,48 +1,40 @@
 "use client";
 
-import {
-  memo,
-  startTransition,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
-import { getPageMeta } from "@/lib/navigation";
+import { getBreadcrumbs } from "@/lib/navigation";
 import { useUIStore } from "@/store/use-ui-store";
+import { NavbarBreadcrumb } from "./NavbarBreadcrumb";
 import { NavbarSearch } from "./NavbarSearch";
 import { NotificationMenu } from "./NotificationMenu";
 import { ProfileMenu } from "./ProfileMenu";
+import { ThemeToggle } from "./ThemeToggle";
 
 type OpenMenu = "notifications" | "profile" | null;
 
 function NavbarComponent() {
   const pathname = usePathname();
-  const openMobileNav = useUIStore((s) => s.openMobileNav);
+  const toggleMobileNav = useUIStore((s) => s.toggleMobileNav);
+  const mobileNavOpen = useUIStore((s) => s.mobileNavOpen);
   const pageMetaOverride = useUIStore((s) => s.pageMetaOverride);
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
 
-  const pageMeta = useMemo(() => {
-    if (pageMetaOverride) return pageMetaOverride;
-    return getPageMeta(pathname);
-  }, [pathname, pageMetaOverride]);
+  const crumbs = useMemo(
+    () => getBreadcrumbs(pathname, pageMetaOverride),
+    [pathname, pageMetaOverride],
+  );
 
   useEffect(() => {
-    startTransition(() => setOpenMenu(null));
+    setOpenMenu(null);
   }, [pathname]);
 
   const onNotificationsOpenChange = useCallback((open: boolean) => {
-    startTransition(() => {
-      setOpenMenu(open ? "notifications" : null);
-    });
+    setOpenMenu(open ? "notifications" : null);
   }, []);
 
   const onProfileOpenChange = useCallback((open: boolean) => {
-    startTransition(() => {
-      setOpenMenu(open ? "profile" : null);
-    });
+    setOpenMenu(open ? "profile" : null);
   }, []);
 
   return (
@@ -51,25 +43,26 @@ function NavbarComponent() {
         <button
           type="button"
           className="smp-icon-btn smp-navbar__mobile-toggle"
-          onClick={openMobileNav}
-          aria-label="Open navigation"
+          onClick={toggleMobileNav}
+          aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
+          aria-expanded={mobileNavOpen}
         >
-          <Menu size={18} strokeWidth={1.75} />
+          <Menu size={16} strokeWidth={1.75} />
         </button>
 
-        <div className="smp-navbar__title-block">
-          <span className="smp-navbar__eyebrow">{pageMeta.eyebrow}</span>
-          <h1 className="smp-navbar__title">{pageMeta.title}</h1>
-        </div>
+        <NavbarBreadcrumb crumbs={crumbs} />
       </div>
 
       <div className="smp-navbar__right">
         <NavbarSearch />
 
-        <NotificationMenu
-          open={openMenu === "notifications"}
-          onOpenChange={onNotificationsOpenChange}
-        />
+        <div className="smp-navbar__actions">
+          <ThemeToggle />
+          <NotificationMenu
+            open={openMenu === "notifications"}
+            onOpenChange={onNotificationsOpenChange}
+          />
+        </div>
 
         <div className="smp-navbar__divider" aria-hidden="true" />
 

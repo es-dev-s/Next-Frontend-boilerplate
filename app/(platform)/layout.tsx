@@ -5,6 +5,8 @@ import {
   SIDEBAR_COOKIE,
 } from "@/lib/sidebar-preference";
 
+export const dynamic = "force-dynamic";
+
 export default async function PlatformLayout({
   children,
 }: {

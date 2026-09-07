@@ -1,47 +1,58 @@
 /* ==========================================================================
-   SMP Design Tokens — single source of truth for color, type, space, motion
+   SMP Design Tokens — Apple-inspired light (system blue) + true-black dark
    ========================================================================== */
 
 :root {
-  /* Brand */
-  --smp-ink: #23212c;
-  --smp-accent: #f1fec8;
+  color-scheme: light;
 
-  /* Surfaces — light theme */
-  --smp-bg: #f7f7f4;
+  /* Brand */
+  --smp-ink: #1d1d1f;
+  --smp-accent: #007aff;
+  --smp-accent-on: #ffffff;
+
+  /* Surfaces — clean Apple light */
+  --smp-bg: #f5f5f7;
   --smp-surface: #ffffff;
   --smp-surface-raised: #ffffff;
-  --smp-surface-sunken: #f0f0ec;
+  --smp-surface-sunken: #e8e8ed;
 
-  /* Ink scales */
+  /* Ink scales — iOS label opacities */
   --smp-ink-primary: var(--smp-ink);
-  --smp-ink-secondary: color-mix(in srgb, var(--smp-ink) 62%, transparent);
-  --smp-ink-tertiary: color-mix(in srgb, var(--smp-ink) 38%, transparent);
-  --smp-ink-quaternary: color-mix(in srgb, var(--smp-ink) 18%, transparent);
+  --smp-ink-secondary: rgba(60, 60, 67, 0.72);
+  --smp-ink-tertiary: rgba(60, 60, 67, 0.48);
+  --smp-ink-quaternary: rgba(60, 60, 67, 0.24);
   --smp-ink-inverse: #ffffff;
 
   /* Borders & focus */
-  --smp-border: color-mix(in srgb, var(--smp-ink) 9%, transparent);
-  --smp-border-strong: color-mix(in srgb, var(--smp-ink) 16%, transparent);
-  --smp-focus-ring: color-mix(in srgb, var(--smp-ink) 28%, transparent);
+  --smp-border: rgba(60, 60, 67, 0.1);
+  --smp-border-strong: rgba(60, 60, 67, 0.18);
+  --smp-focus-ring: rgba(0, 122, 255, 0.45);
 
-  /* Interactive — premium hover language (color only, no layout shift) */
-  --smp-hover: color-mix(in srgb, var(--smp-ink) 5%, transparent);
-  --smp-hover-strong: color-mix(in srgb, var(--smp-ink) 8%, transparent);
-  --smp-hover-soft: color-mix(in srgb, var(--smp-ink) 3.5%, transparent);
-  /* On whitish glass: ink wash (white-on-white is invisible) */
-  --smp-hover-on-glass: color-mix(in srgb, var(--smp-ink) 6%, transparent);
-  --smp-hover-on-glass-strong: color-mix(in srgb, var(--smp-ink) 10%, transparent);
-  --smp-active: color-mix(in srgb, var(--smp-ink) 9%, transparent);
-  --smp-accent-muted: color-mix(in srgb, var(--smp-accent) 55%, var(--smp-surface));
-  --smp-accent-strong: color-mix(in srgb, var(--smp-accent) 82%, #d8e89a);
-  --smp-accent-press: color-mix(in srgb, var(--smp-accent) 70%, #c5d68a);
+  /* Interactive */
+  --smp-hover: rgba(60, 60, 67, 0.06);
+  --smp-hover-strong: rgba(60, 60, 67, 0.1);
+  --smp-hover-soft: rgba(60, 60, 67, 0.04);
+  --smp-hover-on-glass: rgba(60, 60, 67, 0.06);
+  --smp-hover-on-glass-strong: rgba(60, 60, 67, 0.1);
+  --smp-active: rgba(60, 60, 67, 0.12);
+  --smp-accent-muted: rgba(0, 122, 255, 0.12);
+  --smp-accent-strong: #0071e3;
+  --smp-accent-press: #0066d6;
+
+  --smp-danger: #ff3b30;
+  --smp-danger-text: #d70015;
+
+  --smp-glass-highlight: rgba(255, 255, 255, 0.9);
+  --smp-glass-shadow: rgba(0, 0, 0, 0.1);
+  --smp-glass-sheen: rgba(255, 255, 255, 0.35);
 
   /* Layout geometry */
-  --smp-navbar-height: 64px;
+  --smp-navbar-height: 52px;
   --smp-sidebar-width: 264px;
-  /* Icon rail: 40px hit target centered in 72px — (72 − 40) / 2 = 16 */
-  --smp-sidebar-width-collapsed: 72px;
+  /* Icon rail: 36px tile centered in 52px — pad 8 + icon 36 + pad 8 */
+  --smp-sidebar-width-collapsed: 52px;
+  --smp-sidebar-icon: 36px;
+  --smp-sidebar-rail-pad: 8px;
   --smp-content-max: 1200px;
   --smp-radius-sm: 8px;
   --smp-radius-md: 12px;
@@ -86,10 +97,9 @@
   --smp-weight-medium: 500;
   --smp-weight-semibold: 600;
 
-  /* Elevation — flat premium: hairline only, no soft glow stacks */
-  --smp-shadow-xs: 0 1px 0 color-mix(in srgb, var(--smp-ink) 5%, transparent);
-  --smp-shadow-sm: 0 1px 2px color-mix(in srgb, var(--smp-ink) 4%, transparent),
-    0 1px 0 color-mix(in srgb, var(--smp-ink) 3%, transparent);
+  /* Elevation — hairline + faint depth */
+  --smp-shadow-xs: 0 1px 0 rgba(0, 0, 0, 0.04);
+  --smp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 0 rgba(0, 0, 0, 0.03);
 
   /* Motion */
   --smp-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -97,6 +107,11 @@
   --smp-duration-fast: 140ms;
   --smp-duration: 220ms;
   --smp-duration-slow: 320ms;
+  --smp-sidebar-duration: 260ms;
+  --smp-sidebar-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --smp-sidebar-shadow: 8px 0 32px rgb(0 0 0 / 0), 1px 0 0 transparent;
+  --smp-sidebar-shadow-open: 8px 0 32px rgb(0 0 0 / 0.08),
+    1px 0 0 var(--smp-border);
 
   /* Z-index */
   --smp-z-sidebar: 40;
@@ -108,6 +123,110 @@
   --smp-icon-sm: 16px;
   --smp-icon-md: 18px;
   --smp-icon-lg: 20px;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+/*
+  True-black dark — OLED canvas (#000) with graphite raised chrome
+  (#1c1c1e / #2c2c2e), Apple dark-mode blue (#0a84ff).
+*/
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  --smp-ink: #f5f5f7;
+  --smp-accent: #0a84ff;
+  --smp-accent-on: #ffffff;
+
+  --smp-bg: #000000;
+  --smp-surface: #1c1c1e;
+  --smp-surface-raised: #2c2c2e;
+  --smp-surface-sunken: #121214;
+
+  --smp-ink-primary: #f5f5f7;
+  --smp-ink-secondary: rgba(235, 235, 245, 0.62);
+  --smp-ink-tertiary: rgba(235, 235, 245, 0.38);
+  --smp-ink-quaternary: rgba(235, 235, 245, 0.18);
+  --smp-ink-inverse: #000000;
+
+  --smp-border: rgba(255, 255, 255, 0.08);
+  --smp-border-strong: rgba(255, 255, 255, 0.14);
+  --smp-focus-ring: rgba(10, 132, 255, 0.55);
+
+  --smp-hover: rgba(255, 255, 255, 0.06);
+  --smp-hover-strong: rgba(255, 255, 255, 0.1);
+  --smp-hover-soft: rgba(255, 255, 255, 0.04);
+  --smp-hover-on-glass: rgba(255, 255, 255, 0.06);
+  --smp-hover-on-glass-strong: rgba(255, 255, 255, 0.1);
+  --smp-active: rgba(255, 255, 255, 0.12);
+  --smp-accent-muted: rgba(10, 132, 255, 0.22);
+  --smp-accent-strong: #409cff;
+  --smp-accent-press: #0077ed;
+
+  --smp-danger: #ff453a;
+  --smp-danger-text: #ff6961;
+
+  --smp-glass-highlight: rgba(255, 255, 255, 0.08);
+  --smp-glass-shadow: rgba(0, 0, 0, 0.65);
+  --smp-glass-sheen: rgba(255, 255, 255, 0.05);
+  --smp-sidebar-shadow: 8px 0 32px rgb(0 0 0 / 0), 1px 0 0 transparent;
+  --smp-sidebar-shadow-open: 8px 0 32px rgb(0 0 0 / 0.5),
+    1px 0 0 var(--smp-border);
+
+  --smp-shadow-xs: 0 1px 0 rgba(255, 255, 255, 0.05);
+  --smp-shadow-sm: 0 8px 28px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --smp-ink: #f5f5f7;
+    --smp-accent: #0a84ff;
+    --smp-accent-on: #ffffff;
+
+    --smp-bg: #000000;
+    --smp-surface: #1c1c1e;
+    --smp-surface-raised: #2c2c2e;
+    --smp-surface-sunken: #121214;
+
+    --smp-ink-primary: #f5f5f7;
+    --smp-ink-secondary: rgba(235, 235, 245, 0.62);
+    --smp-ink-tertiary: rgba(235, 235, 245, 0.38);
+    --smp-ink-quaternary: rgba(235, 235, 245, 0.18);
+    --smp-ink-inverse: #000000;
+
+    --smp-border: rgba(255, 255, 255, 0.08);
+    --smp-border-strong: rgba(255, 255, 255, 0.14);
+    --smp-focus-ring: rgba(10, 132, 255, 0.55);
+
+    --smp-hover: rgba(255, 255, 255, 0.06);
+    --smp-hover-strong: rgba(255, 255, 255, 0.1);
+    --smp-hover-soft: rgba(255, 255, 255, 0.04);
+    --smp-hover-on-glass: rgba(255, 255, 255, 0.06);
+    --smp-hover-on-glass-strong: rgba(255, 255, 255, 0.1);
+    --smp-active: rgba(255, 255, 255, 0.12);
+    --smp-accent-muted: rgba(10, 132, 255, 0.22);
+    --smp-accent-strong: #409cff;
+    --smp-accent-press: #0077ed;
+
+    --smp-danger: #ff453a;
+    --smp-danger-text: #ff6961;
+
+    --smp-glass-highlight: rgba(255, 255, 255, 0.08);
+    --smp-glass-shadow: rgba(0, 0, 0, 0.65);
+    --smp-glass-sheen: rgba(255, 255, 255, 0.05);
+    --smp-sidebar-shadow: 8px 0 32px rgb(0 0 0 / 0), 1px 0 0 transparent;
+    --smp-sidebar-shadow-open: 8px 0 32px rgb(0 0 0 / 0.5),
+      1px 0 0 var(--smp-border);
+
+    --smp-shadow-xs: 0 1px 0 rgba(255, 255, 255, 0.05);
+    --smp-shadow-sm: 0 8px 28px rgba(0, 0, 0, 0.5),
+      0 1px 0 rgba(255, 255, 255, 0.04);
+  }
 }
 
 @theme inline {
