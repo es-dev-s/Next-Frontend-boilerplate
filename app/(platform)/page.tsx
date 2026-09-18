@@ -8,6 +8,7 @@ export default function OverviewPage() {
           Schola gives your school a precise operating surface — people, classes,
           attendance, and finance in one quiet workspace.
         </p>
+        <Button>Get Started</Button>
       </section>
 
       <section className="smp-page-panel" aria-labelledby="foundation-heading">
